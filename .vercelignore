@@ -1,5 +1,4 @@
-requirements.txt
-*.py
-.venv
-Project_Demonstration.docx
+.venv/
+__pycache__/
+*.pyc
 PROJECT_OVERVIEW.mb
