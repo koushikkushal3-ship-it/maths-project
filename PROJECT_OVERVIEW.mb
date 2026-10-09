@@ -1,0 +1,559 @@
+# PROJECT OVERVIEW
+# Restaurant Customer Behavior — Statistical & Probabilistic Analysis Dashboard
+
+---
+
+## 1. PROJECT DESCRIPTION
+
+This is a **fully client-side, interactive Mathematics & Statistics web application** built for
+academic and analytical purposes. It performs a comprehensive **Exploratory Data Analysis (EDA)**
+on the Seaborn *tips* dataset — 244 real restaurant transactions recorded at a US diner —
+converted to **Indian Rupees (INR, ₹)** at a fixed exchange rate of **1 USD = ₹83.00**.
+
+The project acts as both:
+- A **learning tool** demonstrating core Probability & Statistics concepts (central tendency,
+  dispersion, outlier detection, empirical probability, correlation)
+- A **business intelligence dashboard** that translates raw data into actionable restaurant
+  management recommendations via an embedded AI report generator
+
+All statistical computations are implemented from scratch in pure JavaScript (no statistical
+library used) and the dashboard updates reactively whenever filters are applied or new data
+is uploaded.
+
+---
+
+## 2. PURPOSE OF THE PROJECT
+
+- **Academic goal:** Satisfy a Mathematics/Statistics course project requirement covering:
+  - Data types & scales of measurement
+  - Measures of central tendency (Mean, Median, Mode)
+  - Measures of dispersion (Range, IQR, Standard Deviation, CV)
+  - Box plot & outlier analysis (Tukey's IQR Rule)
+  - Data visualizations (7 required chart types, no KDE)
+  - Empirical probability & conditional probability
+  - Pearson correlation coefficient
+- **Practical goal:** Create a reusable EDA dashboard that works with any CSV file matching
+  the expected schema, giving restaurant owners or analysts a real-time data exploration tool.
+- **Presentation goal:** Generate a formatted Word document (`Project_Demonstration.docx`) to
+  hand in alongside the web app.
+
+---
+
+## 3. TECHNOLOGY STACK
+
+### Frontend (Web Application)
+| Layer       | Technology                        | Version / Source                          |
+|-------------|-----------------------------------|-------------------------------------------|
+| Markup      | HTML5                             | Semantic, SEO-compliant                   |
+| Styling     | Vanilla CSS3                      | Custom, no frameworks                     |
+| Logic       | Vanilla JavaScript (ES2020+)      | No build step, runs directly in browser   |
+| Charts      | **Chart.js**                      | v4.4.1 via jsDelivr CDN                   |
+| CSV Parsing | **PapaParse**                     | v5.4.1 via cdnjs CDN                      |
+| Icons       | **FontAwesome**                   | v6.4.0 via cdnjs CDN                      |
+| Typography  | **Google Fonts**                  | Plus Jakarta Sans + JetBrains Mono        |
+
+### Backend / Data Analysis (Python)
+| Layer              | Technology        | Purpose                                           |
+|--------------------|-------------------|---------------------------------------------------|
+| Data manipulation  | **pandas**        | DataFrame operations, groupby, stats              |
+| Numerical math     | **NumPy**         | polyfit (linear regression), array ops            |
+| Dataset source     | **seaborn**       | `sns.load_dataset('tips')` — embedded dataset     |
+| Plotting           | **matplotlib**    | Generates 7 static PNG charts + 1 composite       |
+| DOCX generation    | **python-docx**   | Generates `Project_Demonstration.docx`            |
+
+### AI / LLM Integration (Business Report Tab)
+| Provider       | Model                          | Role               |
+|----------------|--------------------------------|--------------------|
+| Google Gemini  | `gemini-3.5-flash-lite`        | Primary AI engine  |
+| OpenRouter     | `meta-llama/llama-3.1-8b-instruct:free` | Fallback #1 |
+| Groq           | `llama3-8b-8192`               | Fallback #2        |
+
+Calls are made via browser `fetch()` to public REST APIs. The fallback chain is tried
+sequentially if any provider returns an error or is blocked by CORS.
+
+---
+
+## 4. DATASET DETAILS
+
+- **Source:** Seaborn built-in `tips` dataset
+- **Records:** n = 244 dining parties (observations)
+- **Features:** 7 variables
+- **Currency conversion:** total_bill and tip multiplied by ₹83.00
+- **CSV schema (7 columns):**
+
+```
+total_bill, tip, sex, smoker, day, time, size
+```
+
+### Variable Classification Matrix
+
+| Variable     | Broad Type    | Statistical Sub-type | Scale of Measurement | Description                          |
+|--------------|---------------|----------------------|----------------------|--------------------------------------|
+| `total_bill` | Quantitative  | Continuous           | Ratio                | Cost of meal in ₹ INR                |
+| `tip`        | Quantitative  | Continuous           | Ratio                | Tip/gratuity amount in ₹ INR         |
+| `size`       | Quantitative  | Discrete             | Ratio                | Number of diners at the table (1–6)  |
+| `sex`        | Qualitative   | Nominal              | Nominal              | Gender of the bill payer (Male/Female) |
+| `smoker`     | Qualitative   | Nominal              | Nominal              | Smoking party in group? (Yes/No)     |
+| `day`        | Qualitative   | Nominal              | Nominal              | Day of week (Thur/Fri/Sat/Sun)       |
+| `time`       | Qualitative   | Nominal              | Nominal              | Meal service time (Lunch/Dinner)     |
+
+---
+
+## 5. PROJECT FILE STRUCTURE — PIN-TO-PIN
+
+```
+maths project/
+│
+├── index.html                    ← Main web app entry point (851 lines)
+├── style.css                     ← Full stylesheet — glassmorphism, dark mode (1333 lines)
+├── app.js                        ← Core statistical engine + all UI logic (1267 lines)
+├── tips_data.js                  ← Embedded dataset as a JS global array (TIPS_DATA[])
+│
+├── restaurant_analysis.py        ← Python EDA script — computes all stats + generates 7 PNGs (446 lines)
+├── generate_docx.py              ← Python script — generates Project_Demonstration.docx (92 lines)
+├── update_logic.py               ← Utility script — regex-based HTML/JS patcher (110 lines)
+├── fix_js.py                     ← One-off JS syntax repair utility (374 bytes)
+│
+├── template_1_basic.csv          ← Sample CSV (basic, all days/times, n≈101)
+├── template_2_weekend_only.csv   ← Sample CSV (Sat/Sun only)
+├── template_3_large_parties.csv  ← Sample CSV (party size ≥ 3)
+│
+├── tips.json                     ← Raw dataset in JSON format (50895 bytes)
+├── debug_table.js                ← Debug helper for raw table rendering
+├── test_app.js                   ← Test script v1 (1114 bytes)
+├── test_app2.js                  ← Test script v2 (1271 bytes)
+│
+├── Project_Demonstration.docx    ← Auto-generated Word report (37920 bytes)
+│
+├── .venv/                        ← Python virtual environment (Python deps)
+│
+└── visualizations/               ← Python-generated static chart PNGs
+    ├── 1_histogram_total_bill.png          (93 KB)
+    ├── 2_scatter_bill_vs_tip.png           (406 KB)
+    ├── 3_boxplot_bill_by_day.png           (90 KB)
+    ├── 4_line_avg_bill_by_size.png         (134 KB)
+    ├── 5_bar_visits_by_day.png             (79 KB)
+    ├── 6_pie_visit_proportions.png         (223 KB)
+    ├── 7_heatmap_correlation.png           (91 KB)
+    └── summary_statistical_dashboard.png  (637 KB — 7-panel composite)
+```
+
+---
+
+## 6. COMPONENT BREAKDOWN (PIN-TO-PIN)
+
+### 6.1 `index.html` — Structure (851 lines)
+
+The single-page application shell. All content is rendered within a `.dashboard-layout` wrapper.
+
+| HTML Element / ID                 | Role                                                              |
+|-----------------------------------|-------------------------------------------------------------------|
+| `<header class="top-nav">`        | Top navigation bar with brand logo, dataset badge, action buttons |
+| `#uploadCsvBtn`                   | Button to trigger CSV file picker                                 |
+| `#csvFileInput`                   | Hidden `<input type="file">` for CSV upload                       |
+| `#datasetName`                    | Span showing active dataset name + record count                   |
+| `#themeToggleBtn`                 | Button to toggle light ↔ dark theme                               |
+| `<section class="kpi-ribbon">`    | 5-card row of global Key Performance Indicators                   |
+| `#val-n`                          | KPI: Sample size (n)                                              |
+| `#val-mean-bill`                  | KPI: Mean total bill (₹)                                          |
+| `#val-median-sub`                 | KPI: Median bill (sub-label)                                      |
+| `#val-iqr`                        | KPI: Interquartile range                                          |
+| `#val-iqr-sub`                    | KPI: Q1–Q3 bracket label                                          |
+| `#val-p-sat`                      | KPI: P(Saturday visit) as a percentage                            |
+| `#val-corr`                       | KPI: Pearson r (Bill ↔ Tip)                                       |
+| `<section class="filter-bar">`    | Global filter controls affecting all tabs                         |
+| `#filterDay`                      | `<select>` — filter by day (All/Thur/Fri/Sat/Sun)                 |
+| `#filterTime`                     | `<select>` — filter by meal time (All/Lunch/Dinner)               |
+| `#filterSmoker`                   | `<select>` — filter by smoker status (All/Yes/No)                 |
+| `#resetFiltersBtn`                | Resets all three filters to "All"                                 |
+| `#subsetSummary`                  | Live count showing "Showing X of 244 records"                     |
+| `<nav class="tabs-nav">`          | 5-tab navigation (each `data-tab` maps to a `<section>`)          |
+| **Tab 1** `#tab-overview`         | Data types matrix + raw data explorer table                       |
+| `#rawDataTable`                   | Sortable/searchable/paginated data table (10 rows per page)       |
+| `#tableSearchInput`               | Live search across bill, day, sex, time                           |
+| `#recordsCounter`                 | Shows "Showing X–Y of Z"                                          |
+| `#prevPageBtn` / `#nextPageBtn`   | Pagination buttons                                                |
+| `#pageInfo`                       | "Page N of M" display                                             |
+| **Tab 2** `#tab-central`          | Central Tendency & Dispersion calculations                        |
+| `#tb-mean/median/mode/...`        | Dynamic stat values for Total Bill (11 IDs)                       |
+| `#tip-mean/median/mode/...`       | Dynamic stat values for Tip (11 IDs)                              |
+| `#sz-mean/median/mode/...`        | Dynamic stat values for Party Size (9 IDs)                        |
+| `#dayVariabilityTableBody`        | Day-wise variability breakdown table (dynamically populated)      |
+| **Tab 3** `#tab-outliers`         | Box plot summary + Tukey outlier detection                        |
+| `#tb-fn-min/q1/med/q3/max`        | Five-number summary for Total Bill                                |
+| `#tb-lower-fence` / `#tb-upper-fence` | Tukey's fences for Total Bill                                 |
+| `#billOutlierBadge`               | Shows "N Outliers (X%)" badge                                     |
+| `#billOutlierChips`               | Chip display of outlier bill values                               |
+| `#tip-fn-min/q1/med/q3/max`       | Five-number summary for Tip                                       |
+| `#tip-lower-fence` / `#tip-upper-fence` | Tukey's fences for Tip                                      |
+| `#tipOutlierBadge`                | Shows "N Outliers (X%)" badge for tips                            |
+| `#tipOutlierChips`                | Chip display of outlier tip values                                |
+| `#outliersDetailedTable`          | Full table of all outlier events with trigger classification       |
+| **Tab 4** `#tab-visualizations`   | 7 interactive Chart.js charts in a responsive gallery grid         |
+| `#chartHistogram`                 | Canvas → Chart 1 (Histogram, no KDE)                              |
+| `#chartScatter`                   | Canvas → Chart 2 (Scatter + OLS trendline)                        |
+| `#chartBoxplot`                   | Canvas → Chart 3 (Box plot simulation via bar chart)              |
+| `#chartLine`                      | Canvas → Chart 4 (Line graph: avg bill by party size)             |
+| `#chartBar`                       | Canvas → Chart 5 (Bar chart: visits by day)                       |
+| `#chartPie`                       | Canvas → Chart 6 (Doughnut chart: visit proportions)              |
+| Gallery filter buttons            | 8 buttons (`data-chart` attr) filter chart cards by type          |
+| **Tab 5** `#tab-qa`               | Dynamic business report generated by AI                           |
+| `#dynamic-business-report`        | Container for the injected AI + KPI summary HTML                  |
+| `#gemini-report-content`          | Inner div where AI HTML is injected                               |
+| `<footer class="dashboard-footer">` | Project credits, dataset info, status                           |
+| `<script src="tips_data.js">`     | Loads the embedded TIPS_DATA[] global dataset                     |
+| `<script src="app.js?v=5">`       | Loads the main application logic                                  |
+
+---
+
+### 6.2 `style.css` — Stylesheet (1333 lines)
+
+Full custom CSS with no external framework. Implements a **premium modern design system**.
+
+| Feature                     | Implementation Detail                                              |
+|-----------------------------|--------------------------------------------------------------------|
+| **Color system**            | CSS custom properties (`:root` variables) for all colors, radii, shadows |
+| **Light theme**             | Default — clean white/slate palette (`--bg-main: #f8fafc`)         |
+| **Dark theme**              | `.dark-theme` on `<body>` — deep navy palette (`--bg-main: #0f172a`) |
+| **Typography**              | Plus Jakarta Sans (UI text) + JetBrains Mono (code/values)         |
+| **Glass cards**             | `.glass-card` — white/surface background with subtle border shadow |
+| **Accent colors**           | Blue (#2563eb), Cyan (#0891b2), Indigo (#4f46e5), Purple (#7c3aed), Emerald (#16a34a), Amber (#d97706), Rose (#e11d48) |
+| **Badge system**            | `.badge.blue/cyan/emerald/amber/purple/red` color-coded pill labels |
+| **KPI ribbon**              | `.kpi-ribbon` — 5-column responsive flex row                        |
+| **Filter bar**              | `.filter-bar` — horizontal flex with dropdowns + reset button       |
+| **Tab navigation**          | `.tabs-nav` / `.tab-btn` — underline-active tab style               |
+| **Data tables**             | `.data-table` — striped, hoverable, responsive                      |
+| **Responsive layout**       | `.grid-2col`, `.charts-grid` — CSS Grid with auto-fit breakpoints  |
+| **Metric blocks**           | `.metric-block` / `.metric-mini` — three-column stat display        |
+| **Formula banner**          | `.formula-banner` — horizontal scrollable formula pill strip        |
+| **Outlier chips**           | `.outlier-chip` — inline value chips                                |
+| **Skew badges**             | `.skew-badge.positive / .neutral` — direction-colored alert strips  |
+| **Pagination**              | `.pagination-controls` / `.btn-page`                                |
+| **Transitions**             | `--transition: all 0.2s ease-in-out` applied globally               |
+| **Chart cards**             | `.chart-card` — flex column, shadow, border-radius                  |
+| **Heatmap matrix**          | `.matrix-grid` / `.heat-100/.heat-68/.heat-60/.heat-49` — CSS-colored cells |
+
+---
+
+### 6.3 `app.js` — Statistical Engine & UI Controller (1267 lines)
+
+The entire application is a single `DOMContentLoaded` IIFE. Below are all major function
+groups with their purpose and internal logic.
+
+#### Application State Variables
+| Variable           | Type     | Purpose                                          |
+|--------------------|----------|--------------------------------------------------|
+| `rawData`          | Array    | Full unfiltered dataset (loaded from TIPS_DATA[]) |
+| `activeData`       | Array    | Currently filtered subset of rawData              |
+| `currentFilter`    | Object   | `{day, time, smoker}` — active filter state       |
+| `currentPage`      | Number   | Current page in the paginated raw data table      |
+| `rowsPerPage`      | Constant | 10 rows per page                                  |
+| `sortColumn`       | String   | Active sort key for raw table                     |
+| `sortAsc`          | Boolean  | Sort direction flag                               |
+| `chartInstances`   | Object   | Cache of Chart.js instances (to destroy/re-render)|
+
+#### Statistical Core Functions (all implemented from scratch)
+| Function                | Formula / Logic                                                  |
+|-------------------------|------------------------------------------------------------------|
+| `mean(arr)`             | `Σxᵢ / n` — array reduce sum divided by length                  |
+| `median(arr)`           | Sort array; take middle element or average of two middle elements |
+| `mode(arr)`             | Frequency map on values rounded to 2 decimal places; most frequent |
+| `quantile(arr, q)`      | Linear interpolation between sorted array elements               |
+| `variance(arr)`         | Sample variance: `Σ(xᵢ - x̄)² / (n-1)` (Bessel's correction)    |
+| `stdDev(arr)`           | `Math.sqrt(variance(arr))`                                       |
+| `iqr(arr)`              | `quantile(arr, 0.75) - quantile(arr, 0.25)`                      |
+| `pearsonR(xArr, yArr)`  | `Σ[(xᵢ-x̄)(yᵢ-ȳ)] / sqrt[Σ(xᵢ-x̄)² · Σ(yᵢ-ȳ)²]`              |
+| `linearRegression(x,y)` | OLS slope `m = r · (sy/sx)`, intercept `b = ȳ - m·x̄`           |
+| `formatMoney(amount)`   | Indian locale formatting: `₹1,642.23` using `toLocaleString('en-IN')` |
+
+#### UI Controller Functions
+| Function                    | Trigger               | Action                                              |
+|-----------------------------|-----------------------|-----------------------------------------------------|
+| `applyFilters()`            | Dropdown change       | Filters `rawData` into `activeData`, calls `updateDashboard()` |
+| `updateDashboard()`         | Any data change       | Orchestrator — calls all 6 update + render functions |
+| `updateKPIs()`              | `updateDashboard()`   | Writes mean, median, IQR, P(Sat), Pearson r to KPI ribbon |
+| `updateCentralTendency()`   | `updateDashboard()`   | Writes mean/median/mode/range/Q1/Q3/IQR/StdDev/CV for all 3 numeric vars |
+| `updateDayVariabilityTable()` | `updateDashboard()` | Computes and injects rows for day-wise stats table  |
+| `updateOutlierAnalysis()`   | `updateDashboard()`   | Computes Tukey fences, flags outliers, renders chips and table |
+| `updateProbabilityLab()`    | `updateDashboard()` + slider | Computes P(Bill > threshold), P(Tip > threshold), and conditional probability |
+| `renderRawTable()`          | `updateDashboard()` + search/sort/page | Renders paginated, sorted, searched raw data table |
+| `renderAllCharts()`         | Tab 4 activation + theme toggle | Destroys and re-renders all 7 Chart.js charts |
+| `generateBusinessReport()`  | `updateDashboard()`   | Computes KPIs, builds AI prompt, calls `fetchAIReport()` |
+| `fetchAIReport(prompt)`     | `generateBusinessReport()` | Tries Gemini → OpenRouter → Groq in sequence; injects HTML result |
+| `syncSliderBounds()`        | Boot                  | Sets Probability Lab slider min/max/step/value     |
+
+#### Event Listeners
+| Element                   | Event     | Handler                          |
+|---------------------------|-----------|----------------------------------|
+| `#uploadCsvBtn`           | click     | Triggers `#csvFileInput.click()` |
+| `#csvFileInput`           | change    | PapaParse → validates columns → loads data → `applyFilters()` |
+| `#themeToggleBtn`         | click     | Toggles `.dark-theme`, re-renders charts |
+| `.tab-btn` (×5)           | click     | Shows target pane, lazy-renders charts on Tab 4 |
+| `.gallery-btn` (×8)       | click     | Filters chart card visibility by `data-category` |
+| `#filterDay/Time/Smoker`  | change    | `applyFilters()`                 |
+| `#resetFiltersBtn`        | click     | Resets selects + `applyFilters()` |
+| `#tableSearchInput`       | input     | Re-renders raw table on page 1   |
+| `#prevPageBtn`            | click     | `currentPage--`, re-renders table |
+| `#nextPageBtn`            | click     | `currentPage++`, re-renders table |
+| `th[data-sort]` headers   | click     | Toggles sort column/direction    |
+| `#billSlider / #tipSlider`| input     | `updateProbabilityLab()`         |
+
+---
+
+### 6.4 `tips_data.js` — Embedded Dataset
+
+Declares a global `TIPS_DATA` array of 244 JavaScript objects, each with the shape:
+```js
+{ total_bill: 1533.01, tip: 249.83, sex: "Male", smoker: "No", day: "Sun", time: "Dinner", size: 2 }
+```
+All monetary values are pre-converted to INR (USD × 83). This file is loaded before `app.js`
+so it is available as a dependency.
+
+---
+
+### 6.5 `restaurant_analysis.py` — Python EDA Script (446 lines)
+
+A standalone Python script that reproduces all statistical computations using pandas/NumPy
+and generates the 7 chart images. Outputs to `./visualizations/`.
+
+| Step | What it does                                              |
+|------|-----------------------------------------------------------|
+| 1    | Loads `sns.load_dataset('tips')`, multiplies bills/tips by ₹83 |
+| 2    | Prints central tendency (Mean, Median, Mode) for all 3 numeric vars |
+| 3    | Prints dispersion (Range, Q1, Q2, Q3, IQR, StdDev, Variance, CV) |
+| 4    | Day-wise groupby — variability table across Thur/Fri/Sat/Sun |
+| 5    | Tukey IQR outlier detection for `total_bill` and `tip`    |
+| 6    | Empirical probability: P(Sat), P(Bill>₹2490), P(Tip>₹415), P(Smoker), conditional P |
+| 7    | Pearson correlation matrix for the 3 numeric variables    |
+| 8    | Generates 7 individual PNG charts + 1 composite dashboard PNG |
+
+#### 7 Python-Generated Charts
+| #  | Filename                          | Type         | Data Mapped                                |
+|----|-----------------------------------|--------------|--------------------------------------------|
+| 1  | `1_histogram_total_bill.png`      | Histogram    | Frequency distribution of total_bill (15 bins), Mean+Median vlines |
+| 2  | `2_scatter_bill_vs_tip.png`       | Scatter      | total_bill (x) vs tip (y), color=size, OLS trendline |
+| 3  | `3_boxplot_bill_by_day.png`       | Box plot     | total_bill grouped by day (4 boxes), outliers as red circles |
+| 4  | `4_line_avg_bill_by_size.png`     | Line graph   | Mean total_bill per party size (1–6), labeled data points |
+| 5  | `5_bar_visits_by_day.png`         | Bar chart    | Count of visits per day (Thur/Fri/Sat/Sun) |
+| 6  | `6_pie_visit_proportions.png`     | Pie chart    | Day proportion as % of 244 total visits    |
+| 7  | `7_heatmap_correlation.png`       | Heatmap      | 3×3 Pearson correlation matrix (Bill/Tip/Size) |
+| +  | `summary_statistical_dashboard.png` | Composite | 7-panel subplot dashboard (3×3 grid)       |
+
+---
+
+### 6.6 `generate_docx.py` — Word Document Generator (92 lines)
+
+Uses `python-docx` to programmatically build `Project_Demonstration.docx`.
+
+| Section | Content                                                          |
+|---------|------------------------------------------------------------------|
+| 1       | Project Overview — What/Why/How                                  |
+| 2.1     | Tab 1: Data Types explanation                                    |
+| 2.2     | Tab 2: Central Tendency formulas with bullet points              |
+| 2.3     | Tab 3: Outlier analysis — Tukey's IQR method numbered steps      |
+| 2.4     | Tab 4: All 7 visualizations listed                               |
+| 2.5     | Tab 5: AI Report generation — Gemini + fallback logic explained  |
+| 3       | CSV upload & dynamic filtering system                            |
+
+---
+
+### 6.7 CSV Data Templates
+
+Three pre-built CSV templates are provided for testing the "Upload Custom Data" feature.
+All must conform to the 7-column schema: `total_bill,tip,sex,smoker,day,time,size`.
+
+| File                          | Description              | Approximate n |
+|-------------------------------|--------------------------|---------------|
+| `template_1_basic.csv`        | General mixed dataset    | ~101 rows     |
+| `template_2_weekend_only.csv` | Saturday & Sunday only   | ~101 rows     |
+| `template_3_large_parties.csv`| Party size ≥ 3 only      | ~101 rows     |
+
+---
+
+### 6.8 `update_logic.py` — Development Utility
+
+A developer-only script using Python `re` (regex) to:
+- Surgically remove HTML sections (e.g., Probability Lab tab)
+- Inject new JavaScript logic blocks into app.js
+
+Not part of the runtime application.
+
+---
+
+## 7. UI TABS — DETAILED WALKTHROUGH
+
+### Tab 1 · Overview & Data Types
+- **Variable Type Hierarchy table:** 7 variables × 4 columns (Type, Sub-type, Scale, Description)
+- **Statistical Concept Reference accordion:** 3 expandable concept boxes (Qual vs Quant, Discrete vs Continuous, Scales of Measurement)
+- **Interactive Customer Records Explorer:** Full paginated, sortable, searchable raw data table
+  - Columns: #, Total Bill, Tip, Tip%, Sex, Smoker, Day, Time, Party Size
+  - Sorting: click any column header to toggle ascending/descending
+  - Search: live filter across bill values, day, sex, time
+  - Pagination: 10 rows per page with Prev/Next buttons
+
+### Tab 2 · Central Tendency & Dispersion
+- **Formula banner:** Scrollable strip showing 5 formulas (Mean, Median, Range, IQR, CV)
+- **Three metric blocks** (one per numeric variable): Total Bill, Tip, Party Size
+  - Each block shows: Mean, Median, Mode | Range, Q1, Q3 | IQR, StdDev, CV
+  - Skewness indicator badge at bottom
+- **Day-Wise Variability table:** Thur/Fri/Sat/Sun × 10 metrics (Count, Mean, Median, StdDev, Q1, Q3, IQR, Range, CV, Variability Level badge)
+- Variability insight alert box: identifies highest and lowest CV days
+
+### Tab 3 · Box Plot & Outlier Analysis
+- **Outlier formula card:** Displays Tukey's Lower Bound = Q1 - 1.5×IQR and Upper Bound = Q3 + 1.5×IQR
+- **Total Bill outliers panel:**
+  - Five-number summary (Min, Q1, Median, Q3, Max)
+  - Lower and upper fence values
+  - Detected high-value bill chips (individual outlier values)
+- **Tip Amount outliers panel:** (same layout as above)
+- **Complete Outlier Roster table:** All outlier events with Party ID, Bill, Tip, Tip%, Size, Day, Time, Smoker, Trigger (High Bill / High Tip / Both)
+
+### Tab 4 · Visualizations Gallery (7 Distinct Plots)
+
+All charts are rendered via Chart.js on `<canvas>` elements. Charts re-render on theme
+toggle and when Tab 4 is first activated.
+
+| # | Canvas ID        | Chart.js Type   | X Axis                | Y Axis              | Extra                       |
+|---|------------------|-----------------|-----------------------|---------------------|-----------------------------|
+| 1 | `chartHistogram` | `bar`           | Bill range bins (₹)   | Frequency (count)   | INR bins: ₹0–₹4400 in 12 bands |
+| 2 | `chartScatter`   | `scatter`       | Total Bill (₹)        | Tip (₹)             | OLS trendline (type: 'line') overlay |
+| 3 | `chartBoxplot`   | `bar` (stacked) | Day (Thur/Fri/Sat/Sun)| Bill (₹)            | IQR range bars + Median line overlay |
+| 4 | `chartLine`      | `line`          | Party size (1–6)      | Average Bill (₹)    | Filled area, tension=0.2    |
+| 5 | `chartBar`       | `bar`           | Day (Thu/Fri/Sat/Sun) | Visits (count)      | 4-color bars, no legend     |
+| 6 | `chartPie`       | `doughnut`      | —                     | Day proportions (%) | Legend at bottom            |
+| 7 | (HTML heatmap)   | CSS Grid (HTML) | 3 vars (row headers)  | 3 vars (col headers)| `.heat-100/.heat-68/.heat-60/.heat-49` CSS cells |
+
+Gallery filter buttons let user isolate individual chart types (hist / scatter / box / line / bar / pie / heat).
+
+### Tab 5 · Business Report & AI Findings
+- **Revenue KPI cards:** Total Revenue, Average Customer Spend, Highest Single Bill
+- **AI-Generated Business Report:** HTML injected from Gemini/OpenRouter/Groq into `#gemini-report-content`
+  - Report structure: Customer Behavior & Key Findings | Actionable Recommendations
+  - Formatted with `<h4>`, `<p>`, `<ul>/<li>`, `<strong>`
+  - Loading spinner while waiting for API response
+
+---
+
+## 8. DATA FLOW DIAGRAM
+
+```
+[tips_data.js]
+     │
+     ▼  (global TIPS_DATA[])
+[app.js: DOMContentLoaded]
+     │
+     ├──► rawData = TIPS_DATA[]
+     │
+     ├──► applyFilters()
+     │         │
+     │         ▼
+     │    activeData = rawData.filter(day, time, smoker)
+     │
+     └──► updateDashboard()
+               ├── updateKPIs()           → #val-* DOM elements
+               ├── updateCentralTendency()→ #tb-*, #tip-*, #sz-* DOM elements
+               ├── updateDayVariabilityTable() → #dayVariabilityTableBody
+               ├── updateOutlierAnalysis()→ Chips + #outliersDetailedTable
+               ├── updateProbabilityLab() → Probability bars + #condProbChart
+               ├── renderRawTable()       → #rawDataTableBody (paginated)
+               ├── renderAllCharts()      → 7 Chart.js canvas renders
+               └── generateBusinessReport()
+                         │
+                         ▼
+                   fetch(Gemini API)
+                   ↓ fail → fetch(OpenRouter)
+                   ↓ fail → fetch(Groq)
+                   ↓ success → inject HTML into #gemini-report-content
+```
+
+---
+
+## 9. CSV UPLOAD & FILTERING PIPELINE
+
+### Upload Flow
+1. User clicks **Upload Data** button → `#csvFileInput.click()`
+2. File picker returns a `.csv` file
+3. **PapaParse** parses file: `header: true`, `dynamicTyping: true`, `skipEmptyLines: true`
+4. Column validation: checks for all 7 required keys (`total_bill`, `tip`, `sex`, `smoker`, `day`, `time`, `size`)
+5. If valid: `rawData` is replaced, dataset badge updates, all filters reset to "All", `applyFilters()` triggers full dashboard refresh
+6. If invalid: alert is shown, no state change
+
+### Filter Flow
+1. User changes any dropdown (Day / Time / Smoker)
+2. `applyFilters()` runs `rawData.filter()` with all three active conditions
+3. `activeData` is updated with the subset
+4. `updateDashboard()` is called — every stat, chart, and table recalculates from `activeData`
+5. `#subsetSummary` shows "Showing X of 244 records"
+6. Note: Outlier analysis and Day Variability table always use **`rawData`** (unfiltered), not `activeData`, to preserve statistical integrity
+
+---
+
+## 10. KEY STATISTICAL OUTPUTS (Default Dataset, full n=244)
+
+| Metric                          | Value                   |
+|---------------------------------|-------------------------|
+| Sample Size (n)                 | 244 dining parties       |
+| Mean Total Bill                 | ₹1,642.23               |
+| Median Total Bill               | ₹1,476.98               |
+| Mode Total Bill                 | ₹1,113.86               |
+| Standard Deviation (Bill)       | ₹738.79                 |
+| IQR (Bill)                      | ₹894.74                 |
+| CV% (Bill)                      | 44.99%                  |
+| Q1 (Bill)                       | ₹1,108.05               |
+| Q3 (Bill)                       | ₹2,002.79               |
+| Mean Tip                        | ₹248.94                 |
+| Median Tip                      | ₹240.70                 |
+| IQR (Tip)                       | ₹129.48                 |
+| Bill Outliers (Tukey)           | 9 events (3.69%)        |
+| Tip Outliers (Tukey)            | 9 events (3.69%)        |
+| P(Saturday Visit)               | 35.66%                  |
+| Pearson r (Bill ↔ Tip)          | +0.68 (Strong Positive) |
+| Pearson r (Bill ↔ Party Size)   | +0.60 (Moderate Positive)|
+| Pearson r (Tip ↔ Party Size)    | +0.49 (Moderate Positive)|
+| Busiest Day                     | Saturday (87 visits)    |
+| Quietest Day                    | Friday (19 visits)      |
+| Weekend share of traffic        | 66.8% (Sat + Sun)       |
+| Highest avg spend day           | Sunday (₹1,777)         |
+| Highest variability day (CV)    | Friday (48.41%)         |
+| Most consistent day (CV)        | Sunday (41.25%)         |
+
+---
+
+## 11. PYTHON DEPENDENCIES (`requirements.txt`)
+
+```
+numpy
+pandas
+seaborn
+matplotlib
+python-docx
+```
+
+All packages are installed into the local `.venv/` Python virtual environment.
+
+---
+
+## 12. EXTERNAL CDN DEPENDENCIES
+
+| Library       | URL                                                                 | Version |
+|---------------|---------------------------------------------------------------------|---------|
+| Chart.js      | `https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js` | 4.4.1  |
+| PapaParse     | `https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js` | 5.4.1 |
+| FontAwesome   | `https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css` | 6.4.0 |
+| Google Fonts  | `https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono` | Latest |
+
+---
+
+## 13. DESIGN PRINCIPLES
+
+- **No framework:** Pure HTML/CSS/JS — zero build step, opens directly in a browser
+- **No KDE smoothing:** Histogram uses plain frequency bins as required by the mathematics syllabus
+- **Reactivity:** All stats recompute on every filter change (no stale cache issues)
+- **Currency localization:** All monetary values displayed in Indian numbering format (₹1,642.23)
+- **Dark/light mode:** Full theme toggle with chart re-render to match text/grid colors
+- **Responsive:** CSS Grid auto-fit ensures usability on different screen widths
+- **SEO-compliant:** Proper `<title>`, `<meta description>`, single `<h1>`, semantic elements
+
+---
+
+*Generated: 2026-10-09 | Project: Restaurant Customer Behavior – Probability & Statistics*

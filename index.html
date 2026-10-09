@@ -1,0 +1,852 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Statistical and Probabilistic Analysis of Restaurant Customer Behavior - Interactive Mathematics & Analytics Dashboard">
+  <title>Restaurant Customer Behavior | Statistical & Probabilistic Analysis</title>
+  
+  <!-- Modern Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  
+  <!-- PapaParse for CSV -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+  
+  <!-- Custom Styles -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- App Container -->
+  <div class="dashboard-layout">
+    
+    <!-- Top Navigation Bar -->
+    <header class="top-nav">
+      <div class="nav-brand">
+        <div class="brand-icon">
+          <i class="fa-solid fa-chart-pie"></i>
+        </div>
+        <div>
+          <h1 class="brand-title">Restaurant Customer Behavior</h1>
+          <p class="brand-subtitle">Probability & Statistics • Data Analysis Dashboard</p>
+        </div>
+      </div>
+      
+      <div class="nav-actions">
+        <input type="file" id="csvFileInput" accept=".csv" style="display: none;" />
+        <button id="uploadCsvBtn" class="btn-secondary" title="Upload Custom CSV">
+          <i class="fa-solid fa-file-csv"></i> Upload Data
+        </button>
+        <div class="dataset-badge">
+          <i class="fa-solid fa-database"></i>
+          <span id="datasetName">Seaborn Tips (n = 244)</span>
+        </div>
+        <button id="themeToggleBtn" class="btn-icon" title="Toggle Light/Dark Mode">
+          <i class="fa-solid fa-moon"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- Global Key Metric Ribbons -->
+    <section class="kpi-ribbon">
+      <div class="kpi-card" id="kpi-obs">
+        <div class="kpi-icon blue"><i class="fa-solid fa-users"></i></div>
+        <div class="kpi-content">
+          <span class="kpi-label">Sample Size (n)</span>
+          <span class="kpi-value" id="val-n">244</span>
+          <span class="kpi-sub">Total observed parties</span>
+        </div>
+      </div>
+
+      <div class="kpi-card" id="kpi-mean">
+        <div class="kpi-icon cyan"><i class="fa-solid fa-receipt"></i></div>
+        <div class="kpi-content">
+          <span class="kpi-label">Mean Bill (x̄)</span>
+          <span class="kpi-value" id="val-mean-bill">₹1,642.23</span>
+          <span class="kpi-sub" id="val-median-sub">Median: ₹1,476.98</span>
+        </div>
+      </div>
+
+      <div class="kpi-card" id="kpi-iqr">
+        <div class="kpi-icon purple"><i class="fa-solid fa-arrows-left-right-to-line"></i></div>
+        <div class="kpi-content">
+          <span class="kpi-label">Interquartile Range (IQR)</span>
+          <span class="kpi-value" id="val-iqr">₹894.74</span>
+          <span class="kpi-sub" id="val-iqr-sub">Middle 50% (₹1,108 - ₹2,003)</span>
+        </div>
+      </div>
+
+      <div class="kpi-card" id="kpi-prob">
+        <div class="kpi-icon emerald"><i class="fa-solid fa-dice"></i></div>
+        <div class="kpi-content">
+          <span class="kpi-label">P(Saturday Visit)</span>
+          <span class="kpi-value" id="val-p-sat">35.66%</span>
+          <span class="kpi-sub">Most active dining day</span>
+        </div>
+      </div>
+
+      <div class="kpi-card" id="kpi-corr">
+        <div class="kpi-icon amber"><i class="fa-solid fa-chart-line"></i></div>
+        <div class="kpi-content">
+          <span class="kpi-label">Correlation (Bill ↔ Tip)</span>
+          <span class="kpi-value" id="val-corr">+0.68</span>
+          <span class="kpi-sub">Strong linear association</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Global Interactive Filter Bar -->
+    <section class="filter-bar">
+      <div class="filter-header">
+        <i class="fa-solid fa-sliders"></i>
+        <span>Dynamic Data Filters:</span>
+      </div>
+      
+      <div class="filter-group">
+        <label for="filterDay">Day of Week:</label>
+        <select id="filterDay" class="custom-select">
+          <option value="All">All Days (244)</option>
+          <option value="Thur">Thursday (62)</option>
+          <option value="Fri">Friday (19)</option>
+          <option value="Sat">Saturday (87)</option>
+          <option value="Sun">Sunday (76)</option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label for="filterTime">Meal Time:</label>
+        <select id="filterTime" class="custom-select">
+          <option value="All">All Times</option>
+          <option value="Lunch">Lunch (68)</option>
+          <option value="Dinner">Dinner (176)</option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label for="filterSmoker">Smoker Status:</label>
+        <select id="filterSmoker" class="custom-select">
+          <option value="All">All Customers</option>
+          <option value="Yes">Smoker Party (93)</option>
+          <option value="No">Non-Smoker Party (151)</option>
+        </select>
+      </div>
+
+      <button id="resetFiltersBtn" class="btn-secondary">
+        <i class="fa-solid fa-rotate-left"></i> Reset Filters
+      </button>
+      
+      <div class="active-subset-tag" id="subsetSummary">
+        Showing all 244 records
+      </div>
+    </section>
+
+    <!-- Navigation Tabs -->
+    <nav class="tabs-nav">
+      <button class="tab-btn active" data-tab="tab-overview">
+        <i class="fa-solid fa-table"></i> 1. Overview & Data Types
+      </button>
+      <button class="tab-btn" data-tab="tab-central">
+        <i class="fa-solid fa-bullseye"></i> 2. Central Tendency & Dispersion
+      </button>
+      <button class="tab-btn" data-tab="tab-outliers">
+        <i class="fa-solid fa-box-archive"></i> 3. Box Plot & Outliers
+      </button>
+      <button class="tab-btn" data-tab="tab-visualizations">
+        <i class="fa-solid fa-chart-column"></i> 4. Visualizations Gallery (7 Plots)
+      </button>
+      <button class="tab-btn" data-tab="tab-qa">
+        <i class="fa-solid fa-clipboard-question"></i> 5. Findings & Business Report
+      </button>
+    </nav>
+
+    <!-- Main Content Area -->
+    <main class="dashboard-body">
+
+      <!-- ================= TAB 1: OVERVIEW & DATA TYPES ================= -->
+      <section id="tab-overview" class="tab-pane active">
+        <div class="section-header">
+          <h2>1. Data Types & Classification Matrix</h2>
+          <p>Statistical characterization of restaurant customer variables into Qualitative and Quantitative scales.</p>
+        </div>
+
+        <div class="grid-2col">
+          <!-- Variable Classification Table -->
+          <div class="glass-card">
+            <div class="card-header">
+              <span class="card-title"><i class="fa-solid fa-sitemap"></i> Variable Type Hierarchy</span>
+              <span class="badge blue">Theory & Definition</span>
+            </div>
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Variable</th>
+                    <th>Broad Type</th>
+                    <th>Statistical Sub-type</th>
+                    <th>Scale of Measurement</th>
+                    <th>Description</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><code>total_bill</code></td>
+                    <td><span class="type-pill quant">Quantitative</span></td>
+                    <td>Continuous</td>
+                    <td>Ratio Scale</td>
+                    <td>Cost of meal in USD (can take any real value)</td>
+                  </tr>
+                  <tr>
+                    <td><code>tip</code></td>
+                    <td><span class="type-pill quant">Quantitative</span></td>
+                    <td>Continuous</td>
+                    <td>Ratio Scale</td>
+                    <td>Gratuity paid in USD (true absolute zero)</td>
+                  </tr>
+                  <tr>
+                    <td><code>size</code></td>
+                    <td><span class="type-pill quant">Quantitative</span></td>
+                    <td>Discrete</td>
+                    <td>Ratio Scale</td>
+                    <td>Number of patrons (countable integers: 1, 2, 3...)</td>
+                  </tr>
+                  <tr>
+                    <td><code>sex</code></td>
+                    <td><span class="type-pill qual">Qualitative</span></td>
+                    <td>Nominal</td>
+                    <td>Nominal Scale</td>
+                    <td>Gender of bill payer (Male, Female - no ranking)</td>
+                  </tr>
+                  <tr>
+                    <td><code>smoker</code></td>
+                    <td><span class="type-pill qual">Qualitative</span></td>
+                    <td>Nominal</td>
+                    <td>Nominal Scale</td>
+                    <td>Smoking party presence (Yes, No binary category)</td>
+                  </tr>
+                  <tr>
+                    <td><code>day</code></td>
+                    <td><span class="type-pill qual">Qualitative</span></td>
+                    <td>Nominal</td>
+                    <td>Nominal Scale</td>
+                    <td>Day of dining (Thur, Fri, Sat, Sun)</td>
+                  </tr>
+                  <tr>
+                    <td><code>time</code></td>
+                    <td><span class="type-pill qual">Qualitative</span></td>
+                    <td>Nominal</td>
+                    <td>Nominal Scale</td>
+                    <td>Meal service time (Lunch, Dinner)</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Conceptual Classification Cards -->
+          <div class="glass-card">
+            <div class="card-header">
+              <span class="card-title"><i class="fa-solid fa-graduation-cap"></i> Statistical Concept Reference</span>
+              <span class="badge purple">Fundamental Concepts</span>
+            </div>
+            <div class="concepts-accordion">
+              <div class="concept-box">
+                <h4><i class="fa-solid fa-square-check"></i> Qualitative vs Quantitative</h4>
+                <p><strong>Qualitative (Categorical):</strong> Non-numeric characteristics labeled by attributes (e.g. Day, Smoker). Cannot perform direct arithmetic operations.</p>
+                <p><strong>Quantitative (Numerical):</strong> Measurable quantities where mathematical calculations (Mean, Standard Deviation) are valid.</p>
+              </div>
+
+              <div class="concept-box">
+                <h4><i class="fa-solid fa-square-check"></i> Discrete vs Continuous</h4>
+                <p><strong>Discrete (<code>size</code>):</strong> Result of counting. Values proceed in isolated integer steps without intermediates.</p>
+                <p><strong>Continuous (<code>total_bill</code>, <code>tip</code>):</strong> Result of measurement along an uninterrupted real continuum.</p>
+              </div>
+
+              <div class="concept-box">
+                <h4><i class="fa-solid fa-square-check"></i> Scales of Measurement</h4>
+                <p><strong>Nominal:</strong> Mutual exclusivity without ranking (Sex, Day).</p>
+                <p><strong>Ratio:</strong> True zero point exists; meaningful ratios (e.g. a ₹40 bill is twice as large as a ₹20 bill).</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Interactive Raw Data Explorer -->
+        <div class="glass-card mt-4">
+          <div class="card-header">
+            <div class="header-left">
+              <span class="card-title"><i class="fa-solid fa-table-cells"></i> Interactive Customer Records Explorer</span>
+              <span class="records-counter" id="recordsCounter">Showing 1-10 of 244</span>
+            </div>
+            <div class="table-search">
+              <i class="fa-solid fa-magnifying-glass"></i>
+              <input type="text" id="tableSearchInput" placeholder="Search bill, day, sex...">
+            </div>
+          </div>
+          
+          <div class="table-responsive">
+            <table class="data-table" id="rawDataTable">
+              <thead>
+                <tr>
+                  <th data-sort="id">#</th>
+                  <th data-sort="total_bill">Total Bill (₹) <i class="fa-solid fa-sort"></i></th>
+                  <th data-sort="tip">Tip (₹) <i class="fa-solid fa-sort"></i></th>
+                  <th data-sort="tip_pct">Tip % <i class="fa-solid fa-sort"></i></th>
+                  <th data-sort="sex">Sex <i class="fa-solid fa-sort"></i></th>
+                  <th data-sort="smoker">Smoker <i class="fa-solid fa-sort"></i></th>
+                  <th data-sort="day">Day <i class="fa-solid fa-sort"></i></th>
+                  <th data-sort="time">Time <i class="fa-solid fa-sort"></i></th>
+                  <th data-sort="size">Party Size <i class="fa-solid fa-sort"></i></th>
+                </tr>
+              </thead>
+              <tbody id="rawDataTableBody">
+                <!-- Dynamically populated via JS -->
+              </tbody>
+            </table>
+          </div>
+
+          <div class="pagination-controls">
+            <button id="prevPageBtn" class="btn-page"><i class="fa-solid fa-chevron-left"></i> Prev</button>
+            <span id="pageInfo">Page 1 of 25</span>
+            <button id="nextPageBtn" class="btn-page">Next <i class="fa-solid fa-chevron-right"></i></button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= TAB 2: CENTRAL TENDENCY & DISPERSION ================= -->
+      <section id="tab-central" class="tab-pane">
+        <div class="section-header">
+          <h2>2. Measures of Central Tendency & Dispersion</h2>
+          <p>Mathematical calculations describing where the restaurant data centers and how widely it spreads.</p>
+        </div>
+
+        <!-- Formula Callout Banner -->
+        <div class="formula-banner">
+          <div class="formula-item">
+            <span class="f-title">Sample Mean</span>
+            <code class="f-code">x̄ = Σx / n</code>
+          </div>
+          <div class="formula-item">
+            <span class="f-title">Median (Q2)</span>
+            <code class="f-code">Middle value in ordered array</code>
+          </div>
+          <div class="formula-item">
+            <span class="f-title">Range</span>
+            <code class="f-code">Range = Max - Min</code>
+          </div>
+          <div class="formula-item">
+            <span class="f-title">Interquartile Range</span>
+            <code class="f-code">IQR = Q3 - Q1</code>
+          </div>
+          <div class="formula-item">
+            <span class="f-title">Coefficient of Variation</span>
+            <code class="f-code">CV = (s / x̄) × 100%</code>
+          </div>
+        </div>
+
+        <!-- Metric Grids for Variables -->
+        <div class="stats-comparison-grid">
+          <!-- Total Bill Card -->
+          <div class="metric-block">
+            <div class="block-title">
+              <i class="fa-solid fa-receipt text-cyan"></i>
+              <h3>Total Bill (₹)</h3>
+            </div>
+            <div class="metric-row-group">
+              <div class="metric-mini">
+                <span class="m-label">Mean (x̄)</span>
+                <span class="m-val" id="tb-mean">₹19.79</span>
+              </div>
+              <div class="metric-mini">
+                <span class="m-label">Median (Q2)</span>
+                <span class="m-val" id="tb-median">₹17.80</span>
+              </div>
+              <div class="metric-mini">
+                <span class="m-label">Mode</span>
+                <span class="m-val" id="tb-mode">₹13.42</span>
+              </div>
+            </div>
+            <div class="divider"></div>
+            <div class="metric-row-group">
+              <div class="metric-mini">
+                <span class="m-label">Range</span>
+                <span class="m-val" id="tb-range">₹47.74</span>
+              </div>
+              <div class="metric-mini">
+                <span class="m-label">Q1 (25th %)</span>
+                <span class="m-val" id="tb-q1">₹13.35</span>
+              </div>
+              <div class="metric-mini">
+                <span class="m-label">Q3 (75th %)</span>
+                <span class="m-val" id="tb-q3">₹24.13</span>
+              </div>
+            </div>
+            <div class="metric-row-group mt-2">
+              <div class="metric-mini">
+                <span class="m-label">IQR</span>
+                <span class="m-val" id="tb-iqr">₹10.78</span>
+              </div>
+              <div class="metric-mini">
+                <span class="m-label">Std Dev (s)</span>
+                <span class="m-val" id="tb-std">₹8.90</span>
+              </div>
+              <div class="metric-mini">
+                <span class="m-label">CV (%)</span>
+                <span class="m-val" id="tb-cv">44.99%</span>
+              </div>
+            </div>
+            <div class="skew-badge positive mt-3">
+              <i class="fa-solid fa-arrow-trend-up"></i>
+              <span>Positively Skewed: Mean (₹19.79) > Median (₹17.80)</span>
+            </div>
+          </div>
+
+          <!-- Tip Amount Card -->
+          <div class="metric-block">
+            <div class="block-title">
+              <i class="fa-solid fa-hand-holding-dollar text-emerald"></i>
+              <h3>Tip Amount (₹)</h3>
+            </div>
+            <div class="metric-row-group">
+              <div class="metric-mini">
+                <span class="m-label">Mean (x̄)</span>
+                <span class="m-val" id="tip-mean">₹3.00</span>
+              </div>
+              <div class="metric-mini">
+                <span class="m-label">Median (Q2)</span>
+                <span class="m-val" id="tip-median">₹2.90</span>
+              </div>
+              <div class="metric-mini">
+                <span class="m-label">Mode</span>
+                <span class="m-val" id="tip-mode">₹2.00</span>
+              </div>
+            </div>
+            <div class="divider"></div>
+            <div class="metric-row-group">
+              <div class="metric-mini">
+                <span class="m-label">Range</span>
+                <span class="m-val" id="tip-range">₹9.00</span>
+              </div>
+              <div class="metric-mini">
+                <span class="m-label">Q1 (25th %)</span>
+                <span class="m-val" id="tip-q1">₹2.00</span>
+              </div>
+              <div class="metric-mini">
+                <span class="m-label">Q3 (75th %)</span>
+                <span class="m-val" id="tip-q3">₹3.56</span>
+              </div>
+            </div>
+            <div class="metric-row-group mt-2">
+              <div class="metric-mini">
+                <span class="m-label">IQR</span>
+                <span class="m-val" id="tip-iqr">₹1.56</span>
+              </div>
+              <div class="metric-mini">
+                <span class="m-label">Std Dev (s)</span>
+                <span class="m-val" id="tip-std">₹1.38</span>
+              </div>
+              <div class="metric-mini">
+                <span class="m-label">CV (%)</span>
+                <span class="m-val" id="tip-cv">46.15%</span>
+              </div>
+            </div>
+            <div class="skew-badge positive mt-3">
+              <i class="fa-solid fa-arrow-trend-up"></i>
+              <span>Right Skewed: Pulled upward by large tips (₹9-₹10)</span>
+            </div>
+          </div>
+
+          <!-- Party Size Card -->
+          <div class="metric-block">
+            <div class="block-title">
+              <i class="fa-solid fa-user-group text-purple"></i>
+              <h3>Party Size (Count)</h3>
+            </div>
+            <div class="metric-row-group">
+              <div class="metric-mini">
+                <span class="m-label">Mean (x̄)</span>
+                <span class="m-val" id="sz-mean">2.57</span>
+              </div>
+              <div class="metric-mini">
+                <span class="m-label">Median (Q2)</span>
+                <span class="m-val" id="sz-median">2.00</span>
+              </div>
+              <div class="metric-mini">
+                <span class="m-label">Mode</span>
+                <span class="m-val" id="sz-mode">2.00</span>
+              </div>
+            </div>
+            <div class="divider"></div>
+            <div class="metric-row-group">
+              <div class="metric-mini">
+                <span class="m-label">Range</span>
+                <span class="m-val" id="sz-range">5.00</span>
+              </div>
+              <div class="metric-mini">
+                <span class="m-label">Q1 (25th %)</span>
+                <span class="m-val" id="sz-q1">2.00</span>
+              </div>
+              <div class="metric-mini">
+                <span class="m-label">Q3 (75th %)</span>
+                <span class="m-val" id="sz-q3">3.00</span>
+              </div>
+            </div>
+            <div class="metric-row-group mt-2">
+              <div class="metric-mini">
+                <span class="m-label">IQR</span>
+                <span class="m-val" id="sz-iqr">1.00</span>
+              </div>
+              <div class="metric-mini">
+                <span class="m-label">Std Dev (s)</span>
+                <span class="m-val" id="sz-std">0.95</span>
+              </div>
+              <div class="metric-mini">
+                <span class="m-label">CV (%)</span>
+                <span class="m-val" id="sz-cv">37.01%</span>
+              </div>
+            </div>
+            <div class="skew-badge neutral mt-3">
+              <i class="fa-solid fa-circle-info"></i>
+              <span>Modal Value = 2 Diners (Most common table configuration)</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Day-wise Spending Variability Breakdown -->
+        <div class="glass-card mt-4">
+          <div class="card-header">
+            <span class="card-title"><i class="fa-solid fa-chart-simple"></i> Day-Wise Spending Variability & Dispersion Breakdown</span>
+            <span class="badge amber">Comparative Dispersion</span>
+          </div>
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Day</th>
+                  <th>Visits (Count)</th>
+                  <th>Mean Bill (₹)</th>
+                  <th>Median (₹)</th>
+                  <th>Std Dev (₹)</th>
+                  <th>Q1 (₹)</th>
+                  <th>Q3 (₹)</th>
+                  <th>IQR (₹)</th>
+                  <th>Range (₹)</th>
+                  <th>CV (%)</th>
+                  <th>Variability Level</th>
+                </tr>
+              </thead>
+              <tbody id="dayVariabilityTableBody">
+                <!-- Populated dynamically -->
+              </tbody>
+            </table>
+          </div>
+          <div class="variability-summary mt-3">
+            <div class="alert-box info">
+              <i class="fa-solid fa-lightbulb"></i>
+              <div>
+                <strong>Variability Insights:</strong>
+                Friday shows the highest relative variability (CV = <strong>48.41%</strong>), while Sunday has the highest average spend (<strong>₹21.41</strong>) with the most consistent customer spending pattern (lowest CV = <strong>41.25%</strong>).
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= TAB 3: BOX PLOT & OUTLIERS ================= -->
+      <section id="tab-outliers" class="tab-pane">
+        <div class="section-header">
+          <h2>3. Box Plot & Outlier Analysis (Tukey's IQR Rule)</h2>
+          <p>Rigorous mathematical identification of unusual customer bills and tips using Quartiles and Interquartile Range.</p>
+        </div>
+
+        <!-- Formula Rule Card -->
+        <div class="glass-card mb-4">
+          <div class="outlier-math-box">
+            <div class="om-item">
+              <span class="om-tag">Lower Fence</span>
+              <span class="om-formula">Lower Bound = Q1 - 1.5 × IQR</span>
+              <span class="om-desc">Any observation below this threshold is classified as a low outlier.</span>
+            </div>
+            <div class="om-item">
+              <span class="om-tag">Upper Fence</span>
+              <span class="om-formula">Upper Bound = Q3 + 1.5 × IQR</span>
+              <span class="om-desc">Any observation above this threshold is classified as a high outlier.</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid-2col">
+          <!-- Total Bill Outliers -->
+          <div class="glass-card">
+            <div class="card-header">
+              <span class="card-title"><i class="fa-solid fa-triangle-exclamation text-amber"></i> Total Bill Outliers</span>
+              <span class="badge red" id="billOutlierBadge">9 Outliers (3.69%)</span>
+            </div>
+            <div class="five-num-summary">
+              <div class="fn-point"><span class="fn-lbl">Min</span><span class="fn-v" id="tb-fn-min">₹3.07</span></div>
+              <div class="fn-point"><span class="fn-lbl">Q1</span><span class="fn-v" id="tb-fn-q1">₹13.35</span></div>
+              <div class="fn-point highlighted"><span class="fn-lbl">Median</span><span class="fn-v" id="tb-fn-med">₹17.80</span></div>
+              <div class="fn-point"><span class="fn-lbl">Q3</span><span class="fn-v" id="tb-fn-q3">₹24.13</span></div>
+              <div class="fn-point"><span class="fn-lbl">Max</span><span class="fn-v" id="tb-fn-max">₹50.81</span></div>
+            </div>
+            
+            <div class="bounds-display mt-3">
+              <div class="bound-tag">
+                <span>Lower Bound:</span> <strong id="tb-lower-fence">-₹2.82</strong>
+              </div>
+              <div class="bound-tag">
+                <span>Upper Bound:</span> <strong id="tb-upper-fence">₹40.30</strong>
+              </div>
+            </div>
+
+            <h4 class="mt-3 subhead">Detected High-Value Unusual Bills:</h4>
+            <div class="outlier-chips-container" id="billOutlierChips">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+
+          <!-- Tip Outliers -->
+          <div class="glass-card">
+            <div class="card-header">
+              <span class="card-title"><i class="fa-solid fa-triangle-exclamation text-amber"></i> Tip Amount Outliers</span>
+              <span class="badge red" id="tipOutlierBadge">9 Outliers (3.69%)</span>
+            </div>
+            <div class="five-num-summary">
+              <div class="fn-point"><span class="fn-lbl">Min</span><span class="fn-v" id="tip-fn-min">₹1.00</span></div>
+              <div class="fn-point"><span class="fn-lbl">Q1</span><span class="fn-v" id="tip-fn-q1">₹2.00</span></div>
+              <div class="fn-point highlighted"><span class="fn-lbl">Median</span><span class="fn-v" id="tip-fn-med">₹2.90</span></div>
+              <div class="fn-point"><span class="fn-lbl">Q3</span><span class="fn-v" id="tip-fn-q3">₹3.56</span></div>
+              <div class="fn-point"><span class="fn-lbl">Max</span><span class="fn-v" id="tip-fn-max">₹10.00</span></div>
+            </div>
+
+            <div class="bounds-display mt-3">
+              <div class="bound-tag">
+                <span>Lower Bound:</span> <strong id="tip-lower-fence">-₹0.34</strong>
+              </div>
+              <div class="bound-tag">
+                <span>Upper Bound:</span> <strong id="tip-upper-fence">₹5.91</strong>
+              </div>
+            </div>
+
+            <h4 class="mt-3 subhead">Detected Exceptionally Generous Tips:</h4>
+            <div class="outlier-chips-container" id="tipOutlierChips">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Outlier Data Table -->
+        <div class="glass-card mt-4">
+          <div class="card-header">
+            <span class="card-title"><i class="fa-solid fa-list-check"></i> Complete Roster of Outlier Dining Events</span>
+            <span class="badge blue">Filtered Records</span>
+          </div>
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Party ID</th>
+                  <th>Total Bill</th>
+                  <th>Tip</th>
+                  <th>Tip %</th>
+                  <th>Party Size</th>
+                  <th>Day</th>
+                  <th>Time</th>
+                  <th>Smoker</th>
+                  <th>Outlier Trigger</th>
+                </tr>
+              </thead>
+              <tbody id="outliersDetailedTable">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= TAB 4: VISUALIZATIONS GALLERY ================= -->
+      <section id="tab-visualizations" class="tab-pane">
+        <div class="section-header">
+          <h2>4. Data Visualizations Gallery (7 Distinct Visualizations)</h2>
+          <p>Visual statistical analysis satisfying all chart requirements without KDE smoothing.</p>
+        </div>
+
+        <!-- Gallery Tabs / Filter Buttons -->
+        <div class="gallery-controls">
+          <button class="gallery-btn active" data-chart="all">All Charts</button>
+          <button class="gallery-btn" data-chart="hist">1. Histogram</button>
+          <button class="gallery-btn" data-chart="scatter">2. Scatter Plot</button>
+          <button class="gallery-btn" data-chart="box">3. Box Plot</button>
+          <button class="gallery-btn" data-chart="line">4. Line Graph</button>
+          <button class="gallery-btn" data-chart="bar">5. Bar Graph</button>
+          <button class="gallery-btn" data-chart="pie">6. Pie Chart</button>
+          <button class="gallery-btn" data-chart="heat">7. Heatmap</button>
+        </div>
+
+        <!-- Charts Grid -->
+        <div class="charts-grid" id="chartsGrid">
+          
+          <!-- Chart 1: Histogram -->
+          <div class="chart-card" data-category="hist">
+            <div class="card-header">
+              <span class="card-title">1. Histogram of Total Bills (No KDE)</span>
+              <span class="badge blue">Frequency Distribution</span>
+            </div>
+            <div class="chart-wrapper">
+              <canvas id="chartHistogram"></canvas>
+            </div>
+            <div class="chart-caption">
+              <strong>Interpretation:</strong> Right-skewed distribution unimodal around ₹13-₹17. Red line = Mean (₹19.79), Gold line = Median (₹17.80).
+            </div>
+          </div>
+
+          <!-- Chart 2: Scatter Plot -->
+          <div class="chart-card" data-category="scatter">
+            <div class="card-header">
+              <span class="card-title">2. Scatter Plot: Total Bill vs Tip</span>
+              <span class="badge emerald">Bivariate Relationship</span>
+            </div>
+            <div class="chart-wrapper">
+              <canvas id="chartScatter"></canvas>
+            </div>
+            <div class="chart-caption">
+              <strong>Interpretation:</strong> Strong positive correlation (r = +0.68). Red dashed line displays the linear regression slope.
+            </div>
+          </div>
+
+          <!-- Chart 3: Box Plot -->
+          <div class="chart-card" data-category="box">
+            <div class="card-header">
+              <span class="card-title">3. Box Plot: Total Bill by Day</span>
+              <span class="badge purple">Dispersion & Outliers</span>
+            </div>
+            <div class="chart-wrapper">
+              <canvas id="chartBoxplot"></canvas>
+            </div>
+            <div class="chart-caption">
+              <strong>Interpretation:</strong> Highlights Median, Q1, Q3, and whiskers across days. Saturday displays the widest range and highest outlier count.
+            </div>
+          </div>
+
+          <!-- Chart 4: Line Graph -->
+          <div class="chart-card" data-category="line">
+            <div class="card-header">
+              <span class="card-title">4. Line Graph: Average Bill by Party Size</span>
+              <span class="badge amber">Trend Across Groups</span>
+            </div>
+            <div class="chart-wrapper">
+              <canvas id="chartLine"></canvas>
+            </div>
+            <div class="chart-caption">
+              <strong>Interpretation:</strong> Mean restaurant bill scales predictably from ₹7.24 for 1 diner to ₹34.83 for 6 diners.
+            </div>
+          </div>
+
+          <!-- Chart 5: Bar Graph -->
+          <div class="chart-card" data-category="bar">
+            <div class="card-header">
+              <span class="card-title">5. Bar Graph: Number of Customer Visits by Day</span>
+              <span class="badge cyan">Frequency Comparison</span>
+            </div>
+            <div class="chart-wrapper">
+              <canvas id="chartBar"></canvas>
+            </div>
+            <div class="chart-caption">
+              <strong>Interpretation:</strong> Saturday represents peak footfall (87 tables), followed by Sunday (76 tables). Friday is the quietest day.
+            </div>
+          </div>
+
+          <!-- Chart 6: Pie Chart -->
+          <div class="chart-card" data-category="pie">
+            <div class="card-header">
+              <span class="card-title">6. Pie Chart: Visit Proportions by Day</span>
+              <span class="badge red">Category Proportions</span>
+            </div>
+            <div class="chart-wrapper">
+              <canvas id="chartPie"></canvas>
+            </div>
+            <div class="chart-caption">
+              <strong>Interpretation:</strong> Weekend traffic (Saturday + Sunday) accounts for <strong>66.8%</strong> of total weekly dining patrons.
+            </div>
+          </div>
+
+          <!-- Chart 7: Heatmap -->
+          <div class="chart-card span-2" data-category="heat">
+            <div class="card-header">
+              <span class="card-title">7. Heatmap: Pearson Correlation Matrix</span>
+              <span class="badge blue">Linear Association</span>
+            </div>
+            <div class="heatmap-container">
+              <div class="matrix-grid">
+                <div class="matrix-cell header-cell"></div>
+                <div class="matrix-cell header-cell">Total Bill</div>
+                <div class="matrix-cell header-cell">Tip</div>
+                <div class="matrix-cell header-cell">Party Size</div>
+                
+                <div class="matrix-cell header-cell">Total Bill</div>
+                <div class="matrix-cell heat-100"><strong>1.00</strong><span>Identity</span></div>
+                <div class="matrix-cell heat-68"><strong>0.68</strong><span>Strong Positive</span></div>
+                <div class="matrix-cell heat-60"><strong>0.60</strong><span>Moderate Positive</span></div>
+
+                <div class="matrix-cell header-cell">Tip</div>
+                <div class="matrix-cell heat-68"><strong>0.68</strong><span>Strong Positive</span></div>
+                <div class="matrix-cell heat-100"><strong>1.00</strong><span>Identity</span></div>
+                <div class="matrix-cell heat-49"><strong>0.49</strong><span>Moderate Positive</span></div>
+
+                <div class="matrix-cell header-cell">Party Size</div>
+                <div class="matrix-cell heat-60"><strong>0.60</strong><span>Moderate Positive</span></div>
+                <div class="matrix-cell heat-49"><strong>0.49</strong><span>Moderate Positive</span></div>
+                <div class="matrix-cell heat-100"><strong>1.00</strong><span>Identity</span></div>
+              </div>
+            </div>
+            <div class="chart-caption">
+              <strong>Interpretation:</strong> Total bill is the primary driver of tip amount (r = 0.68), while party size also exerts direct upward pressure on total bill (r = 0.60).
+            </div>
+          </div>
+
+          <!-- Python Matplotlib Image Gallery View removed -->
+
+        </div>
+      </section>
+
+      <!-- ================= TAB 5: BUSINESS REPORT & QA ================= -->
+      <section id="tab-qa" class="tab-pane">
+        <div class="section-header">
+          <h2>5. Dynamic Business Report & Recommendations</h2>
+          <p>Key findings, customer spending behavior, and strategic recommendations based on your current data.</p>
+        </div>
+        <div id="dynamic-business-report">
+          <!-- Dynamically populated by JS -->
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="dashboard-footer">
+      <div>
+        <strong>Statistical & Probabilistic Analysis of Restaurant Customer Behavior</strong>
+        <p>Mathematical & Statistical Web Application built with HTML5, CSS3, JavaScript & Chart.js</p>
+      </div>
+      <div class="footer-links">
+        <span>Dataset: Seaborn tips (n=244)</span>
+        <span>•</span>
+        <span>Status: Fully Computed & Verified</span>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Inline / External Dataset -->
+  <script src="tips_data.js"></script>
+  <!-- Optional Local AI Config (ignored by Git) -->
+  <script src="config.js"></script>
+  <!-- Application Logic & Statistical Engine -->
+  <script src="app.js?v=5"></script>
+</body>
+</html>
