@@ -1284,7 +1284,22 @@ Do NOT wrap your response in markdown code blocks like \`\`\`html. Output raw HT
     // -------------------------------------------------------------
     syncSliderBounds();
     updateDashboard();
+
+    // Check Python Backend status
+    try {
+      fetch('/api/health')
+        .then(res => res.json())
+        .then(data => {
+          const badgeText = document.getElementById('pythonEngineText');
+          if (badgeText && data.status === 'healthy') {
+            badgeText.textContent = `Python Active (Pandas v${data.pandas_version})`;
+            badgeText.parentElement.title = `Connected to Python backend with NumPy ${data.numpy_version} & Pandas ${data.pandas_version}`;
+          }
+        })
+        .catch(() => {});
+    } catch(e) {}
 });
+
 
 
 // End of file

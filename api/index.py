@@ -147,18 +147,12 @@ def compute_all_statistics(df):
     return stats
 
 
-# --------------------------------------------------------------------------
-# Web & Static Asset Routes
-# --------------------------------------------------------------------------
+# Main web entrypoint
 @app.route('/')
 def index():
     """Serve the main web dashboard."""
     return send_from_directory(BASE_DIR, 'index.html')
 
-@app.route('/<path:filename>')
-def serve_static(filename):
-    """Serve static assets (style.css, app.js, images, CSVs, etc.)."""
-    return send_from_directory(BASE_DIR, filename)
 
 
 # --------------------------------------------------------------------------
@@ -295,6 +289,60 @@ def generate_report():
     """
     return jsonify({"html": html, "engine": "Python/Flask"})
 
+# Route aliases for Vercel / local routing
+@app.route('/health')
+def health_alias():
+    return health()
+
+@app.route('/stats', methods=['GET'])
+def stats_alias():
+    return get_stats()
+
+@app.route('/api/index', methods=['GET', 'POST'])
+def handle_vercel_index():
+    """Vercel rewrites all /api/* routes to /api/index."""
+    matched = request.headers.get('x-matched-path', '').lower()
+    uri = request.environ.get('RAW_URI', '').lower()
+    fwd = request.headers.get('x-forwarded-uri', '').lower()
+    full_target = f"{matched} {uri} {fwd}"
+
+    if 'health' in full_target:
+        return health()
+    if 'stats' in full_target:
+        return get_stats()
+    if 'data' in full_target:
+        return get_data()
+    if 'export-docx' in full_target or 'docx' in full_target:
+        return export_docx()
+    if 'report' in full_target:
+        return generate_report()
+    if 'upload' in full_target:
+        return upload_csv()
+    if 'filter' in full_target:
+        return filter_data()
+
+    # Default to health status
+    return jsonify({
+        "status": "healthy",
+        "backend": "Python / Flask",
+        "numpy_version": np.__version__,
+        "pandas_version": pd.__version__,
+        "records_loaded": len(BASE_DF)
+    })
+
+
+# Generic static asset handler (registered last so it never shadows /api routes)
+@app.route('/<path:filename>')
+def serve_static(filename):
+    """Serve static files if found, otherwise return 404 for missing APIs or index.html."""
+    file_path = os.path.join(BASE_DIR, filename)
+    if os.path.exists(file_path) and os.path.isfile(file_path):
+        return send_from_directory(BASE_DIR, filename)
+    if filename.startswith('api/'):
+        return jsonify({"error": "API endpoint not found", "endpoint": filename}), 404
+    return send_from_directory(BASE_DIR, 'index.html')
+
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port, debug=True)
+
