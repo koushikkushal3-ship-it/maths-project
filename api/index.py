@@ -300,35 +300,26 @@ def stats_alias():
 
 @app.route('/api/index', methods=['GET', 'POST'])
 def handle_vercel_index():
-    """Vercel rewrites all /api/* routes to /api/index."""
-    matched = request.headers.get('x-matched-path', '').lower()
-    uri = request.environ.get('RAW_URI', '').lower()
-    fwd = request.headers.get('x-forwarded-uri', '').lower()
-    full_target = f"{matched} {uri} {fwd}"
+    """Vercel rewrites all /api/* routes to /api/index?route=..."""
+    route = request.args.get('route', '').strip().lower()
 
-    if 'health' in full_target:
-        return health()
-    if 'stats' in full_target:
+    if route == 'stats':
         return get_stats()
-    if 'data' in full_target:
+    if route == 'data':
         return get_data()
-    if 'export-docx' in full_target or 'docx' in full_target:
+    if route in ['export-docx', 'docx']:
         return export_docx()
-    if 'report' in full_target:
+    if route == 'report':
         return generate_report()
-    if 'upload' in full_target:
+    if route == 'upload':
         return upload_csv()
-    if 'filter' in full_target:
+    if route == 'filter':
         return filter_data()
+    if route in ['health', '']:
+        return health()
 
-    # Default to health status
-    return jsonify({
-        "status": "healthy",
-        "backend": "Python / Flask",
-        "numpy_version": np.__version__,
-        "pandas_version": pd.__version__,
-        "records_loaded": len(BASE_DF)
-    })
+    return jsonify({"error": f"Unknown route '{route}'"}), 404
+
 
 
 # Generic static asset handler (registered last so it never shadows /api routes)
